@@ -3,7 +3,7 @@ var craneModels = {
 	'basic': {
 		maxrotation:100,
 		damping:0.1,
-		hoverThrust:4700,
+		hoverThrust:4200,
         brakeThrust:5500,
         vertices: [ -10,5,-10,0,-15,-5,-10,-20,10,-20,15,-5,10,0,10,5,25,5,30,0,40,10,45,10,35,20,35,15,30,10,25,15,10,15,5,18,-5,18,-9.7227183,15,-25,15,-30,10,-35,15,-35,20,-45,10,-40,10,-30,0,-25,5]
 	}
@@ -15,10 +15,10 @@ var craneControls  = {
     rotationStep:10
 }
 
-function makeCrane( model ) {
+function makeCrane( model,x,y ) {
     var PTM = 20;
     var crane = {
-    	body: new Phaser.Physics.Box2D.Body(this.game, null, 0, -10*PTM),
+    	body: new Phaser.Physics.Box2D.Body(this.game, null, x,y),
     	attrs: craneModels[model],
     	control: craneControls,
     	autoLevel: function(soll){ autoLevel(crane.body,soll) },
@@ -44,7 +44,10 @@ function autoLevel(body2d,zielwinkel) {
 }
 
 function addMagnet(chainEnd) {
-	magnet = game.add.sprite(chainEnd.x, chainEnd.y+10, 'magnet',1);
+	//var magnet = game.add.sprite(chainEnd.x, chainEnd.y+10, 'magnet',1);
+    var magnet = {body: new Phaser.Physics.Box2D.Body(this.game, null, chainEnd.x, chainEnd.y+10, 0.5) };
+    magnet.body.setRectangle(40, 20, 0, 0, 0);
+
     game.physics.box2d.enable(magnet,false);
     game.physics.box2d.revoluteJoint(chainEnd, magnet, 0, 10, 0, -10);
     magnet.body.angularDamping=10;

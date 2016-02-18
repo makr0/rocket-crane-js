@@ -3,7 +3,7 @@ var game = new Phaser.Game(800, 800, Phaser.CANVAS, 'phaser-example', { create: 
 
 var groundVertices = [-250,-200,-200,0,1200,0,1250,-200];
 
-var crane,blockSprite,attachLoad;
+var crane,blockSprite,attachLoad,line, box;
 
 function preload() {
     game.load.image('block', 'assets/sprites/block.png');
@@ -28,8 +28,8 @@ function create() {
     var groundBody = new Phaser.Physics.Box2D.Body(this.game, null, 0, 0, 0);
     groundBody.setChain(groundVertices);
 
-    crane = makeCrane('basic');
-
+    crane = makeCrane('basic',50,-300);
+    crane.control.thrust=crane.attrs.hoverThrust;
 
     cursors = game.input.keyboard.createCursorKeys();
 
@@ -38,16 +38,17 @@ function create() {
     game.input.onUp.add(mouseDragEnd, this);
     bindHotkeys()
 
-    var box = addBox();
+    box = addBox();
     crane.magnet.body.setBodyContactCallback(box, contactCallback, this);
+    crane.magnet.body.setCategoryPostsolveCallback(0x8000, postsolveCallback, this);
 
     game.camera.follow(crane.body);
-    //caption1 = game.add.text(5, 25, 'dR: -', { fill: '#ffffff', font: '14pt Arial' });
+    caption1 = game.add.text(5, 25, 'contact: -', { fill: '#ffffff', font: '14pt Arial' });
     caption2 = game.add.text(5, 45, 'T: -', { fill: '#ffffff', font: '14pt Arial' });
-    //caption3 = game.add.text(5, 65, 'r: -', { fill: '#ffffff', font: '14pt Arial' });
-    //caption1.fixedToCamera = true;
+//    caption3 = game.add.text(5, 65, 'r: -', { fill: '#ffffff', font: '14pt Arial' });
+    caption1.fixedToCamera = true;
     caption2.fixedToCamera = true;
-    //caption3.fixedToCamera = true;
+//    caption3.fixedToCamera = true;
 }
 function bindHotkeys() {
     game.input.keyboard.addKey(Phaser.Keyboard.ZERO).onDown.add(function(){crane.control.thrust=0});
@@ -56,22 +57,26 @@ function bindHotkeys() {
 }
 
 function addBox() {
-    blockSprite = game.add.sprite(550, -100, 'block');
+    blockSprite = game.add.sprite(100, -100, 'block');
     game.physics.box2d.enable(blockSprite);
-    blockSprite.body.angle = 30;
+    blockSprite.body.angle = 33;
     return blockSprite;
 }
 
 function update() {
     if(attachLoad) {
-        crane.currentloadJoint=game.physics.box2d.weldJoint(
+        line = new Phaser.Line(attachLoad.p1.x,attachLoad.p1.y,attachLoad.p2.x,attachLoad.p2.y);
+        var offset1={x:attachLoad.p1.x,
+                     y:attachLoad.p1.y},
+            offset2={x:attachLoad.p2.x,
+                     y:attachLoad.p2.y};
+        crane.currentloadJoint=game.physics.box2d.ropeJoint(
             attachLoad.body1, attachLoad.body2,
-            attachLoad.p1.x * 30,attachLoad.p1.y*30,
-            attachLoad.p2.x*30,attachLoad.p2.y*30
+            line.length
         );
-        console.log(attachLoad.p1.x * 30);
         attachLoad=false;
         crane.hasAttached=true;
+        console.log(offset1,offset2);
     }
     if (cursors.up.isDown) {
         crane.control.thrust+=crane.control.thrustStep;
@@ -109,17 +114,25 @@ function update() {
     //caption3.text ='R: '+crane.body.rotation;
 }
 function contactCallback(body1, body2, fixture1, fixture2, begin) {
-    if(crane.hasAttached) return;
+    //if(crane.hasAttached) return;
     // This callback is also called for EndContact events, which we are not interested in.
     if (!begin) return;
-    var p1 = fixture1.GetBody().GetContactList().contact.GetManifold().points[1].localPoint;
-    var p2 = fixture2.GetBody().GetContactList().contact.GetManifold().points[1].localPoint;
+//    var p1 = fixture1.GetBody().GetContactList().contact.GetManifold().points[1].localPoint;
+//    var p2 = fixture2.GetBody().GetContactList().contact.GetManifold().points[1].localPoint;
+    var t1 = fixture1.GetBody().GetContactList().contact.GetManifold().points[0].localPoint;
+    var t2 = fixture2.GetBody().GetContactList().contact.GetManifold().points[0].localPoint;
+    var p1 = body1.toWorldPoint( {x:0,y:0}, t1 );
+    var p2 = body2.toWorldPoint( {x:0,y:0}, t2 );
+
     attachLoad={body1:body1,body2:body2,p1:p1,p2:p2};
-    console.log(p1,p2);
+}
+function postsolveCallback(body1, body2, fixture1, fixture2, contact, impulseInfo) {
+    console.log(body1, body2, fixture1, fixture2, contact, impulseInfo);
 }
 function render() {
     game.debug.box2dWorld();
     game.debug.context.strokeStyle = 'rgba(255,255,255,0.25)';
+    game.debug.geom(line);
 }
 function mouseDragStart() {
     game.camera.unfollow();
