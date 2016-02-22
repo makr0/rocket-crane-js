@@ -1,4 +1,4 @@
 var levels = [
-    { ground: {heights: [200,100,0,200], elementWidth:100 } }
+    { ground: [-250,-200,-200,0,1200,0,1250,-200] }
 ];
 
