@@ -81,7 +81,8 @@ crane.prototype = {
     },
     setContacts: function( objects ){
         for(i=0;i<objects.length;i++) {
-            this.magnet.body.setFixtureContactCallback( objects[i].body, this.contactCallback, this );
+            this.magnet.body.setFixtureContactCallback(   objects[i].body, this.contactCallback,   this );
+            this.magnet.body.setFixturePostsolveCallback( objects[i].body, this.PostsolveCallback, this );
         }
     },
     setHUD: function(graphics) {
@@ -94,43 +95,27 @@ crane.prototype = {
             }
         }
     },
-    contactCallback: function(body1, body2, fixture1, fixture2, begin) {
+    PostsolveCallback: function(contact,impulse) {
         if(this.hasAttached) return;
+        //this.debugGeom.push( new Phaser.Circle(contact.x,contact.y,10) );
+    },
+    contactCallback: function(body1, body2, fixture1, fixture2, begin, contact) {
+        if(this.hasAttached) return;
+        this.debugGeom=[];
+
         // This callback is also called for EndContact events, which we are not interested in.
         if (!begin) return;
-        //    var p1 = fixture1.GetBody().GetContactList().contact.GetManifold().points[1].localPoint;
-        //    var p2 = fixture2.GetBody().GetContactList().contact.GetManifold().points[1].localPoint;
-        var m1 = new box2d.b2WorldManifold();
-        var m2 = new box2d.b2WorldManifold();
-        var contact;
-
-        var p,p1=fixture1.GetBody().GetContactList().contact.GetManifold().pointCount
-             ,p2=fixture2.GetBody().GetContactList().contact.GetManifold().pointCount;
-        this.debugGeom=[];
-        contact=fixture1.GetBody().GetContactList();
-        while( contact=contact.next ) {
-            if(!contact.contact.GetWorldManifold) continue;
-            contact.contact.GetWorldManifold(m1);
-            for(var i=0;i < p1;i++) {
-                p = m1.points[i];
-                this.debugGeom.push( new Phaser.Circle(p.x*100,p.y*100,10) );
-            }
-        }
-        contact=fixture2.GetBody().GetContactList();
-        while( contact=contact.next ) {
-            if(!contact.contact.GetWorldManifold) continue;
-            contact.contact.GetWorldManifold(m2);
-            for(var i=0;i < p2;i++) {
-                p = m2.points[i];
-                this.debugGeom.push( new Phaser.Circle(p.x*100,p.y*100,10) );
-            }
-        }
-        this.debugGeom.push( new Phaser.Circle(-100,-100,5) );
-        this.debugGeom.push( new Phaser.Circle(-100,100,5) );
-        this.debugGeom.push( new Phaser.Circle(100,100,5) );
-        this.debugGeom.push( new Phaser.Circle(100,-100,5) );
         this.attachNext=true;
         this.attachData={body1:body1,body2:body2};
+        var manifold = contact.GetManifold();
+        var worldManifold = new box2d.b2WorldManifold();
+        var p,debugScale=95;
+        contact.GetWorldManifold(worldManifold);
+        this.debugGeom.push(new Phaser.Rectangle(0,-debugScale,debugScale,debugScale) );
+        for (var i = 0; i < manifold.pointCount;i++) {
+            p=worldManifold.points[i]
+            this.debugGeom.push(new Phaser.Circle(-p.x*debugScale,-p.y*debugScale,10) );
+        }
     },
     attachLoad: function(){
         if(this.hasAttached) return;

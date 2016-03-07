@@ -22,7 +22,7 @@ main.prototype = {
         var groundBody = new Phaser.Physics.Box2D.Body(this.game, null, 0, 0, 0);
         groundBody.setChain(levels[level].ground);
 
-        this.boxes = [this.addBox(100,-100),this.addBox(300,-100)];
+        this.boxes = [this.addBox(0,-100),this.addBox(300,-100)];
         this.crane = new crane('basic',50,-300);
         this.crane.setContacts(this.boxes)
         this.crane.setHUD(this.gui.hud);
@@ -43,7 +43,7 @@ main.prototype = {
     addBox: function(x,y) {
         var blockSprite = game.add.sprite(x,y, 'block');
         game.physics.box2d.enable(blockSprite);
-        blockSprite.body.angle = 33;
+        blockSprite.body.angle = -180;
         return blockSprite;
     },
 
